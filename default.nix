@@ -15,7 +15,7 @@
 
 buildGoApplication {
   pname = "airzone-explorer";
-  version = "0.0.1";
+  version = "0.0.2";
   pwd = ./.;
   src = ./.;
   modules = ./gomod2nix.toml;
