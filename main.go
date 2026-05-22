@@ -8,6 +8,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -20,7 +21,8 @@ import (
 
 const (
 	defaultBaseURL      = "https://m.airzonecloud.com/api/v1"
-	defaultListenAddr   = ":9922"
+	defaultListenHost   = ""
+	defaultListenPort   = 9922
 	defaultMetricsPath  = "/metrics"
 	exporterNamespace   = "airzone"
 	deviceConfigType    = "user"
@@ -31,7 +33,8 @@ type exporterConfig struct {
 	email         string
 	passwordFile  string
 	baseURL       string
-	listenAddress string
+	listenHost    string
+	listenPort    int
 	metricsPath   string
 	timeout       time.Duration
 }
@@ -181,7 +184,8 @@ func main() {
 	flag.StringVar(&cfg.email, "email", "", "Airzone account email")
 	flag.StringVar(&cfg.passwordFile, "password-file", "", "Path to a file containing the Airzone account password")
 	flag.StringVar(&cfg.baseURL, "base-url", defaultBaseURL, "Airzone API base URL")
-	flag.StringVar(&cfg.listenAddress, "listen-address", defaultListenAddr, "Address to listen on for HTTP requests")
+	flag.StringVar(&cfg.listenHost, "listen-host", defaultListenHost, "Host or IP address to listen on for HTTP requests")
+	flag.IntVar(&cfg.listenPort, "listen-port", defaultListenPort, "TCP port to listen on for HTTP requests")
 	flag.StringVar(&cfg.metricsPath, "metrics-path", defaultMetricsPath, "HTTP path that serves Prometheus metrics")
 	flag.DurationVar(&cfg.timeout, "timeout", 15*time.Second, "HTTP timeout for Airzone API requests")
 	flag.Parse()
@@ -209,7 +213,7 @@ func main() {
 	})
 
 	server := &http.Server{
-		Addr:              cfg.listenAddress,
+		Addr:              net.JoinHostPort(cfg.listenHost, fmt.Sprintf("%d", cfg.listenPort)),
 		Handler:           mux,
 		ReadHeaderTimeout: 5 * time.Second,
 	}
@@ -230,8 +234,8 @@ func validateConfig(cfg exporterConfig) error {
 	if strings.TrimSpace(cfg.baseURL) == "" {
 		return errors.New("base-url is required")
 	}
-	if strings.TrimSpace(cfg.listenAddress) == "" {
-		return errors.New("listen-address is required")
+	if cfg.listenPort < 1 || cfg.listenPort > 65535 {
+		return errors.New("listen-port must be between 1 and 65535")
 	}
 	if strings.TrimSpace(cfg.metricsPath) == "" {
 		return errors.New("metrics-path is required")

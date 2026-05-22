@@ -20,12 +20,25 @@
       flake-utils,
       gomod2nix,
     }:
+    let
+      nixosModule =
+        args@{
+          pkgs,
+          ...
+        }:
+        (import ./module.nix {
+          airzonePackage = self.packages.${pkgs.system}.default;
+        }) args;
+    in
     (flake-utils.lib.eachDefaultSystem (
       system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
 
         callPackage = pkgs.callPackage;
+        package = callPackage ./. {
+          inherit (gomod2nix.legacyPackages.${system}) buildGoApplication;
+        };
         go-test = pkgs.stdenvNoCC.mkDerivation {
           name = "go-test";
           dontBuild = true;
@@ -66,12 +79,14 @@
         checks = {
           inherit go-test go-lint;
         };
-        packages.default = callPackage ./. {
-          inherit (gomod2nix.legacyPackages.${system}) buildGoApplication;
-        };
+        packages.default = package;
         devShells.default = callPackage ./shell.nix {
           inherit (gomod2nix.legacyPackages.${system}) mkGoEnv gomod2nix;
         };
       }
-    ));
+    ))
+    // {
+      nixosModules.default = nixosModule;
+      nixosModules.airzone-explorer = nixosModule;
+    };
 }
