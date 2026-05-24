@@ -27,7 +27,7 @@
           ...
         }:
         (import ./module.nix {
-          airzonePackage = self.packages.${pkgs.system}.default;
+          airzonePackage = self.packages.${pkgs.stdenv.hostPlatform.system}.default;
         }) args;
     in
     (flake-utils.lib.eachDefaultSystem (

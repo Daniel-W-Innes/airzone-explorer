@@ -28,7 +28,7 @@ in
     package = lib.mkOption {
       type = lib.types.package;
       default = airzonePackage;
-      defaultText = lib.literalExpression "inputs.airzone-explorer.packages.\${pkgs.system}.default";
+      defaultText = lib.literalExpression "inputs.airzone-explorer.packages.\${pkgs.stdenv.hostPlatform.system}.default";
       description = "Package providing the `airzone-explorer` binary.";
     };
 
